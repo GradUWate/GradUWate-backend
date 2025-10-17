@@ -1,0 +1,20 @@
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+
+# Virtual environment(s)
+.venv/
+
+# Poetry / tool caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Env files & local DBs
+.env
+.dev.db
+
+# IDE/editor
+.vscode/
+.idea/
