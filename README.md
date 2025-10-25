@@ -6,7 +6,7 @@ Base FastAPI scaffold managed by **Poetry**. No business logic yet.
 
 ## 🧩 Prerequisites
 
-- **Python** 3.11 or 3.12
+- **Python** 3.11+
 - **Poetry** → [Install Guide](https://python-poetry.org/docs/#installation)
 
 ---
@@ -17,12 +17,16 @@ Base FastAPI scaffold managed by **Poetry**. No business logic yet.
 # 1) Install dependencies (with dev tools)
 poetry install --with dev
 
+# to add new package
+poetry add package-name
+
 # 2) Copy environment file
 cp .env.example .env
 
-# 3) Run the API (dev)
-poetry run uvicorn app.main:app --reload --port 8000
-# open http://localhost:8000/docs
+# 3) Run the API + DBs (pg + neo4j)
+docker compose up --build
+# API docs open http://localhost:8000/docs
+# Interact with neo4j http://localhost:7474
 ```
 
 Or use the Makefile shortcuts:
@@ -48,16 +52,6 @@ make fmt     # ruff --fix
 - `app/tasks/`: schedulers/cron
 - `tests/`: pytest tests
 
----
-
-## 🐳 Docker (Poetry inside image)
-
-```bash
-docker compose up --build
-# open http://localhost:8000/docs
-```
-
----
 
 ## 📦 Export Pinned Requirements (optional)
 
