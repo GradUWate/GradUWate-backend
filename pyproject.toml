@@ -8,11 +8,19 @@ readme = "README.md"
 packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11"
 fastapi = ">=0.115"
 uvicorn = {version = ">=0.30", extras = ["standard"]}
 pydantic = ">=2.8"
 pydantic-settings = ">=2.4"
+neo4j = ">=5.23"
+psycopg = { version = ">=3.2", extras = ["binary"] }
+requests = ">=2.32"
+beautifulsoup4 = "^4.14.2"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.44"}
+psycopg2-binary = "^2.9.11"
+asyncpg = "^0.30.0"
+aiosqlite = "^0.21.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.3"
