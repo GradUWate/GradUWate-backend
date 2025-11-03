@@ -5,6 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.logging import configure_logging
 
+from app.db.neo4j.graph_adapter import init_neo4j
+from app.db.bootstrap import bootstrap_from_parsed_records
+from app.db.postgres.session import engine, async_session, Base
+from .parsing import fetch_courses_mock
+
 app = FastAPI(
     title="GradUWate API",
     version="0.1.0",
@@ -24,7 +29,7 @@ configure_logging()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,6 +43,17 @@ def health():
         "env": settings.ENV,
         "version": "0.1.0",
     }
+
+@app.on_event("startup")
+async def startup():
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    await init_neo4j()
+
+    async with async_session() as db:
+        await bootstrap_from_parsed_records(db, fetch_courses_mock())
 
 @app.get("/", include_in_schema=False)
 def root():

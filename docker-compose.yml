@@ -1,12 +1,33 @@
-
 version: "3.9"
 services:
+  neo4j:
+    image: neo4j:5.25
+    ports: ["7474:7474", "7687:7687"]
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_dbms_security_auth__minimum__password__length: 6
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1g
+      NEO4J_PLUGINS: '["apoc"]'
+    volumes:
+      - neo4j_data:/data
+  pg:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports: ["5432:5432"]
+    volumes:
+      - pg_data:/var/lib/postgresql/data
   api:
     build: .
-    ports:
-      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file: .env
+    depends_on: [neo4j, pg]
+    ports: ["8000:8000"]
     volumes:
-      - ./app:/app/app
-      - ./.env:/app/.env:ro
-    environment:
-      - ENV=local
+      - .:/app
+volumes:
+  neo4j_data:
+  pg_data:
