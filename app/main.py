@@ -50,7 +50,7 @@ async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    await init_neo4j()  # <-- now safe to keep open
+    driver = await init_neo4j()
 
     async with async_session() as db:
         await bootstrap_from_parsed_records(db, fetch_courses_mock())
