@@ -1,4 +1,6 @@
+from ast import List
 import asyncio
+from typing import Dict
 from neo4j import AsyncGraphDatabase, AsyncDriver
 from app.core.config import settings
 
@@ -41,6 +43,7 @@ async def init_neo4j(max_wait_seconds: int = 30) -> None:
 
 def get_neo4j() -> AsyncDriver | None:
     """Return the driver if ready; otherwise None (so callers can skip graph work)."""
+    print("GET NEO4J DRIVER", _driver._closed)
     return _driver
 
 
@@ -102,3 +105,70 @@ async def merge_antireq_edge(driver: AsyncDriver, a_id: str, b_id: str):
     """
     async with driver.session() as s:
         await s.run(cy, a=a_id, b=b_id)
+
+
+async def collect_graph_for_id(driver: AsyncDriver, id_value: str, rel_type: str = "REQUIRES", depth: int = 6):
+    """
+    Collect a graph starting at node `id_value` following relationship `rel_type`
+    outwards up to `depth`. Returns a dict with 'nodes' and 'links'.
+    rel_type should be either "REQUIRES" (course -> prereq) or "UNLOCKS" (course -> successor).
+    """
+    if not driver:
+        return {"nodes": [], "links": []}
+
+    rel = "REQUIRES" if rel_type.upper() == "REQUIRES" else "UNLOCKS"
+
+    cy = f"""
+    MATCH path=(c:Course {{id:$id}})-[:{rel}*1..{depth}]->(n)
+    WITH path
+    RETURN
+      [x IN nodes(path) | {{id: x.id, code: x.code, title: x.title, level: x.level}}] AS nds,
+      [r IN relationships(path) | {{start: startNode(r).id, end: endNode(r).id, type: type(r), group_id: r.group_id}}] AS rls
+    LIMIT 200
+    """
+
+    nodes_map: Dict[str, Dict] = {}
+    links: List[Dict] = []
+
+    try:
+        async with driver.session() as sess:
+            result = await sess.run(cy, id=id_value)
+            records = await result.data()
+    except Exception:
+        # If driver/session fails, return empty graph to let caller handle status
+        return {"nodes": [], "links": []}
+    
+    print("RECORDS FROM NEO4J", records)
+
+    # records is a list of dicts; each dict has keys 'nds' and 'rls'
+    for rec in records:
+        nds = rec.get("nds") or []
+        rls = rec.get("rls") or []
+        for n in nds:
+            nid = n.get("id")
+            if nid:
+                # ensure we have at least id and code/title
+                nodes_map[nid] = {
+                    "id": nid,
+                    "code": n.get("code"),
+                    "title": n.get("title"),
+                    "level": n.get("level"),
+                }
+        for r in rls:
+            links.append({
+                "start": r.get("start"),
+                "end": r.get("end"),
+                "type": r.get("type"),
+                "group_id": r.get("group_id"),
+            })
+
+    # dedupe links
+    seen = set()
+    uniq_links = []
+    for l in links:
+        key = (l.get("start"), l.get("end"), l.get("type"), l.get("group_id"))
+        if key not in seen:
+            seen.add(key)
+            uniq_links.append(l)
+
+    return {"nodes": list(nodes_map.values()), "links": uniq_links}

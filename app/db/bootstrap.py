@@ -88,9 +88,8 @@ async def bootstrap_from_parsed_records(db: AsyncSession, parsed: List[Dict]) ->
                 other = _id_from_code(code)
                 await merge_antireq_edge(driver, a_id=course_id, b_id=other)
                 await merge_antireq_edge(driver, a_id=other, b_id=course_id)
-    finally:
-        if hasattr(driver, "close"):
-            await driver.close() if callable(getattr(driver, "close")) else None
+    except Exception as e:
+        print("Error bootstrapping Neo4j graph:", e)
 
     return {
         "inserted": len(records),
