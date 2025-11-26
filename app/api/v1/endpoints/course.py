@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
 from app.db.postgres.session import get_session
-from app.db.postgres.crud import get_course_by_code
+from app.db.postgres.crud import get_all_courses, get_course_by_code
 from app.db.neo4j.graph_adapter import init_neo4j, get_neo4j, collect_graph_for_id
 from neo4j import AsyncGraphDatabase, AsyncDriver
 
@@ -56,6 +56,20 @@ async def get_course(code: str, db: AsyncSession = Depends(get_session)):
         "antireqs": antireqs,
     }
 
+@router.get("/courses")
+async def get_courses(db: AsyncSession = Depends(get_session)):
+    courses = await get_all_courses(db)
+
+    def to_dict(course):
+        return {
+            "id": course.id,
+            "code": course.code,
+            "title": course.title,
+            "description": course.description,
+            "level": course.level,
+        }
+
+    return [to_dict(course) for course in courses]
 
 
 @router.get("/courses/{code}/backpath")

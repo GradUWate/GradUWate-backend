@@ -1,12 +1,17 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
 from ..models.courses import Course, CourseTermRule
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, List
 
 async def get_course_by_code(db: AsyncSession, code: str) -> Course | None:
     q = select(Course).where(Course.code == code)
     r = await db.execute(q)
     return r.scalar_one_or_none()
+
+async def get_all_courses(db: AsyncSession) -> List[Course] | None:
+    q = select(Course)
+    r = await db.execute(q)
+    return r.scalars().all()
 
 async def upsert_course(db: AsyncSession, *, id: str, code: str, title: str, description: str | None, level: int | None):
     obj = await db.get(Course, id)
