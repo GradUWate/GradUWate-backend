@@ -7,6 +7,23 @@ from bs4 import BeautifulSoup, Tag
 
 URL_TEMPLATE = "https://ucalendar.uwaterloo.ca/{term}/COURSE/course-{subject}.html"
 
+SUBJECTS = [
+    "ACTSC", "AFM", "AMATH", "ANTH", "APPLS", "ARBUS", "ARCH", "ARTS",
+    "AVIA", "BET", "BIOL", "BUS", "CDNST", "CHE", "CHEM", "CHINA", "CIVE",
+    "CLAS", "CMW", "CO", "COMM", "COOP", "CROAT", "CS", "DAC",
+    "DUTCH", "EARTH", "EASIA", "ECE", "ECON","ENBUS",
+    "ENGL", "ENVE", "ENVS", "ERS", "FINE", "FR", "GBDA",
+    "GENE", "GEOE", "GEOG", "GER", "GERON", "GRK","HIST", "HLTH",
+    "HRM", "HUMSC", "INDEV", "INTEG", "INTST", "ITAL", "ITALST",
+    "JAPAN", "JS", "KIN", "KOREA", "LAT", "LS", "MATBUS", "MATH", "ME",
+    "MEDVL", "MNS", "MSCI", "MTE", "MTHEL", "MUSIC", "NE",
+    "OPTOM", "PACS", "PD", "PDARCH", "PDPHRM", "PHARM", "PHIL", "PHYS",
+    "PLAN", "PMATH", "PORT", "PSCI", "PSYCH", "REC", "REES", "RS",
+    "RUSS", "SCBUS", "SCI", "SDS", "SE", "SI", "SMF", "SOC",
+    "SOCWK", "SPAN", "SPCOM", "STAT", "STV", "SWREN", "SYDE",
+    "UNIV", "VCULT", "WKRPT"
+    ]
+
 # Match headers like: "CS 135 LAB,LEC,TST,TUT 0.50" OR "CS 136L LAB 0.25" OR "CS 489 LEC,TUT 0.50"
 HEADER_RE = re.compile(r"^([A-Z]{2,4})\s+(\d{2,3}[A-Z]?)\s+[A-Z, ]+\s+([0-9.]+)\s*$")
 
@@ -131,7 +148,6 @@ def parse_divtable(divtable: Tag) -> t.Optional[dict]:
     }
 
 def parse_subject(url: str) -> list[dict]:
-    print(f"Fetching {url}")
     r = requests.get(url, timeout=30)
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
@@ -144,20 +160,20 @@ def parse_subject(url: str) -> list[dict]:
             courses.append(rec)
     return courses
 
-def fetch_courses_mock(term_code: str = "2223", subject: str = "CS"):
+def fetch_courses(term_code: str = "2223"):
     """
     Public helper to fetch a subject's courses from live uCalendar HTML
     (used as a stand-in for the real UW API).
     """
-    url = URL_TEMPLATE.format(term=term_code, subject=subject)
     all_courses: list[dict] = []
 
     try:
-        subj_courses = parse_subject(url)
-        #print(f"  -> parsed {len(subj_courses)} courses")
-        all_courses.extend(subj_courses)
+        for s in SUBJECTS:
+            url = URL_TEMPLATE.format(term=term_code, subject=s)
+            subj_courses = parse_subject(url)
+            all_courses.extend(subj_courses)
 
     except Exception as e:
         print(f"[warn] failed {url}: {e}")
-
+    
     return all_courses
