@@ -9,7 +9,7 @@ from app.core.logging import configure_logging
 from app.db.neo4j.graph_adapter import init_neo4j, close_neo4j
 from app.db.bootstrap import bootstrap_from_parsed_records
 from app.db.postgres.session import engine, async_session, Base
-from .parsing import fetch_courses_mock
+from .parsing import fetch_courses
 
 app = FastAPI(
     title="GradUWate API",
@@ -53,7 +53,7 @@ async def startup():
     driver = await init_neo4j()
 
     async with async_session() as db:
-        await bootstrap_from_parsed_records(db, fetch_courses_mock())
+        await bootstrap_from_parsed_records(db, fetch_courses())
 
 @app.on_event("shutdown")
 async def shutdown():
